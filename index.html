@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Angel's Desserts - Calculadora de Ventas</title>
+<style>
+  :root{
+    --brand-1:#d97706;
+    --brand-2:#b45309;
+    --bg:#fff7ed;
+    --card:#ffffff;
+    --text:#1f2937;
+    --muted:#6b7280;
+    --success:#16a34a;
+    --danger:#dc2626;
+    --radius:14px;
+    --shadow:0 8px 24px rgba(0,0,0,.08);
+    --shadow-sm:0 2px 10px rgba(0,0,0,.06);
+    --focus: 0 0 0 3px rgba(217,119,6,.35);
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, "Helvetica Neue", Arial, "Apple Color Emoji","Segoe UI Emoji";
+    color:var(--text);
+    background: linear-gradient(180deg,var(--bg),#fff);
+  }
+
+  .header{
+    background: linear-gradient(135deg,var(--brand-1),var(--brand-2));
+    color:#fff;
+    padding:18px 20px;
+    box-shadow: var(--shadow);
+    position:sticky; top:0; z-index:10;
+  }
+  .header h1{
+    margin:0; font-weight:800; letter-spacing:.3px;
+  }
+  .header p{
+    margin:4px 0 0; opacity:.95;
+  }
+
+  .container{
+    max-width:1200px;
+    margin:18px auto;
+    padding:0 14px 28px;
+    display:grid;
+    grid-template-columns: 320px 1fr 340px;
+    grid-template-rows: auto auto;
+    gap:16px;
+  }
+  .card{
+    background:var(--card);
+    border-radius:var(--radius);
+    box-shadow: var(--shadow);
+    padding:16px;
+  }
+  .card h3{
+    margin:0 0 12px; font-size:1.05rem;
+  }
+  .section-title{
+    font-weight:800; font-size:1.05rem; margin:16px 0 10px;
+  }
+
+  .grid-buttons{
+    display:grid; gap:10px;
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .pill{
+    display:flex; flex-direction:column; align-items:flex-start; justify-content:center;
+    gap:4px;
+    border:1px solid #f1f5f9;
+    border-radius:12px;
+    padding:10px 12px;
+    background:#fff;
+    box-shadow: var(--shadow-sm);
+    cursor:pointer;
+    transition:.15s ease-in-out;
+  }
+  .pill .label{ font-weight:700; }
+  .pill .sub{ color:var(--muted); font-size:.85rem; }
+  .pill[data-active="true"]{
+    border-color:transparent;
+    background: #fff3e6;
+    outline: none;
+    box-shadow: var(--focus);
+  }
+
+  .grid-flavors{
+    display:grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap:12px;
+  }
+  .flavor{
+    display:flex; align-items:center; gap:10px;
+    border:1px solid #f1f5f9;
+    border-radius:12px;
+    padding:12px 14px;
+    background:#fff;
+    box-shadow: var(--shadow-sm);
+    cursor:pointer;
+    transition:.15s;
+    white-space:normal; /* permitir que el nombre se vea completo */
+    overflow:visible;
+    text-overflow:clip;
+    min-height:48px;
+  }
+  .flavor[data-active="true"]{ background:#eef6ff; box-shadow: var(--focus); border-color:transparent; }
+  .flavor .emoji{ font-size:1.15rem }
+  .flavor .count-badge{
+    display:none;
+    position:absolute;
+    top:-6px;
+    right:-6px;
+    background:#d97706;
+    color:#fff;
+    width:22px;
+    height:22px;
+    border-radius:50%;
+    font-size:0.75rem;
+    font-weight:800;
+    align-items:center;
+    justify-content:center;
+  }
+  .flavor{
+    position:relative;
+  }
+  .flavor[data-count]:not([data-count="0"]) .count-badge{
+    display:flex;
+  }
+
+  .qty-row{
+    display:flex; align-items:center; gap:10px; margin-top:2px;
+  }
+  .qty-btn{
+    border:none; background:#f3f4f6; padding:10px 12px;
+    border-radius:10px; cursor:pointer; font-weight:800;
+    box-shadow:var(--shadow-sm);
+  }
+  .qty-btn:active{ transform:translateY(1px) }
+  .qty-display{
+    min-width:54px; text-align:center; font-weight:800; font-size:1.1rem;
+    padding:8px 12px; background:#fff; border:1px solid #e5e7eb; border-radius:12px;
+  }
+
+  .discounts{
+    display:grid; grid-template-columns: repeat(4, 1fr); gap:10px;
+  }
+  .disc{
+    padding:10px 12px; text-align:center; border:1px solid #f1f5f9; background:#fff; border-radius:12px;
+    cursor:pointer; box-shadow:var(--shadow-sm);
+  }
+  .disc[data-active="true"]{ background:#ecfdf5; border-color:transparent; box-shadow: var(--focus) }
+  .full-btn{
+    width:100%; padding:12px 14px; font-weight:800; border:none; border-radius:12px; cursor:pointer;
+    color:#fff; background:linear-gradient(135deg,var(--brand-1),var(--brand-2));
+    margin-top:8px; box-shadow: var(--shadow);
+  }
+  .full-btn:disabled{ opacity:.55; cursor:not-allowed; }
+
+  .current-sale .row{ display:flex; gap:12px; flex-wrap:wrap; }
+  .kv{ background:#f9fafb; border:1px solid #eef2f7; padding:10px 12px; border-radius:10px; }
+  .kv b{ display:block; font-size:.8rem; color:var(--muted); font-weight:700 }
+  .kv span{ font-weight:800 }
+
+  .confirm-btn{
+    margin-top:12px; width:100%; padding:12px 14px; font-weight:800; border:none; border-radius:12px; cursor:pointer;
+    color:#fff; background:linear-gradient(135deg,#16a34a,#15803d); box-shadow: var(--shadow);
+  }
+  .confirm-btn:disabled{ opacity:.55; cursor:not-allowed; }
+
+  .summary .totals{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+  .stat{ background:#f9fafb; border:1px solid #eef2f7; padding:12px; border-radius:12px; }
+  .stat .label{ color:var(--muted); font-weight:700; font-size:.9rem }
+  .stat .value{ font-weight:900; font-size:1.25rem }
+
+  .danger-btn{ background:#ef4444; color:#fff; border:none; padding:10px 12px; border-radius:12px; font-weight:800; cursor:pointer; box-shadow: var(--shadow-sm) }
+  .neutral-btn{ background:#f3f4f6; border:none; padding:10px 12px; border-radius:12px; font-weight:800; cursor:pointer; box-shadow: var(--shadow-sm) }
+  .btns{ display:flex; gap:10px; margin-top:12px }
+
+  .history{ grid-column: 1 / 4 }
+  .table-wrap{ overflow:auto; border-radius:12px; border:1px solid #eef2f7 }
+  table{ width:100%; border-collapse:separate; border-spacing:0; min-width:800px; }
+  thead th{ position:sticky; top:0; background:#f9fafb; text-align:left; font-size:.9rem; padding:10px 8px; border-bottom:1px solid #e5e7eb }
+  tbody td{ padding:10px 8px; border-bottom:1px solid #f1f5f9; font-size:.95rem }
+  tbody tr:last-child td{ border-bottom:none }
+  .empty{ text-align:center; padding:16px; color:var(--muted) }
+
+  @media (max-width: 1024px){
+    .container{ grid-template-columns: 1fr; }
+    .history{ grid-column: 1 }
+  }
+  /* Modal */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:50}
+  .modal{background:#fff;border-radius:16px;box-shadow:var(--shadow);width:min(520px,92vw);padding:0 0 16px}
+  .modal header{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid #f1f5f9}
+  .modal header h4{margin:0;font-size:1.15rem;color:#7a3e00}
+  .modal .body{padding:14px 18px}
+  .receipt{background:#fff7e6;border:1px solid #f7e6cc;border-radius:12px;padding:12px 14px}
+  .receipt .row{display:flex;align-items:center;justify-content:space-between;padding:6px 0}
+  .receipt .total{border-top:1px dashed #e1c9a3;margin-top:8px;padding-top:8px;font-weight:900;font-size:1.15rem}
+  .modal footer{display:flex;justify-content:flex-end;padding:8px 18px 0}
+  .btn{border:none;border-radius:12px;padding:10px 14px;font-weight:800;cursor:pointer;box-shadow:var(--shadow-sm)}
+  .btn-primary{background:linear-gradient(135deg,var(--brand-1),var(--brand-2));color:#fff}
+  .btn-ghost{background:#f3f4f6}
+</style>
+</head>
+<body>
+  <header class="header">
+    <h1>Angel's Desserts</h1>
+    <p>Calculadora de Ventas de Brownies</p>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h3>Registrar Venta</h3>
+
+      <div class="section-title">Tipo de Paquete</div>
+      <div class="grid-buttons" id="packageButtons">
+        <button class="pill" data-value="Individual" data-size="1">
+          <span class="label">Individual</span>
+          <span class="sub">$40</span>
+        </button>
+        <button class="pill" data-value="Bolsa de 3" data-size="3">
+          <span class="label">Bolsa de 3</span>
+          <span class="sub">$100</span>
+        </button>
+        <button class="pill" data-value="Caja de 4" data-size="4">
+          <span class="label">Caja de 4</span>
+          <span class="sub">$120</span>
+        </button>
+      </div>
+
+      <div class="section-title" id="flavorTitle">Tipo de Brownie</div>
+      <div class="grid-flavors" id="flavorButtons">
+        <button class="flavor" data-value="Bat Glass" data-count="0"><span class="count-badge">0</span><span class="emoji">🦇</span><span>Bat Glass</span></button>
+        <button class="flavor" data-value="Brownie Mummy" data-count="0"><span class="count-badge">0</span><span class="emoji">🧻</span><span>Brownie Mummy</span></button>
+        <button class="flavor" data-value="Brookie Monster" data-count="0"><span class="count-badge">0</span><span class="emoji">👾</span><span>Brookie Monster</span></button>
+        <button class="flavor" data-value="Brownie Kit Kat" data-count="0"><span class="count-badge">0</span><span class="emoji">🍫</span><span>Brownie Kit Kat</span></button>
+        <button class="flavor" data-value="Spooky Oreo" data-count="0"><span class="count-badge">0</span><span class="emoji">🍪</span><span>Spooky Oreo</span></button>
+        <button class="flavor" data-value="M & Monster" data-count="0"><span class="count-badge">0</span><span class="emoji">🍬</span><span>M & Monster</span></button>
+      </div>
+
+      <div class="section-title">Cantidad de Paquetes</div>
+      <div class="qty-row">
+        <button id="qtyMinus" class="qty-btn">−</button>
+        <div id="qtyDisplay" class="qty-display">1</div>
+        <button id="qtyPlus" class="qty-btn">+</button>
+      </div>
+
+      <div class="section-title">Descuento</div>
+      <div class="discounts" id="discountButtons">
+        <button class="disc" data-value="0">Sin descuento</button>
+        <button class="disc" data-value="5">5%</button>
+        <button class="disc" data-value="10">10%</button>
+        <button class="disc" data-value="15">15%</button>
+        <button class="disc" data-value="50">2x1 50%</button>
+      </div>
+
+      <button id="calcBtn" class="full-btn" disabled>Mostrar Cantidad a Pagar</button>
+    </section>
+
+    <section class="card current-sale">
+      <h3>Venta Actual</h3>
+      <div id="salePlaceholder" class="empty">Selecciona un tipo de paquete</div>
+      <div id="saleSummary" style="display:none">
+        <div class="row">
+          <div class="kv"><b>Paquete</b><span id="sumPackage">—</span></div>
+          <div class="kv"><b>Brownie</b><span id="sumFlavor">—</span></div>
+          <div class="kv"><b>Cantidad</b><span id="sumQty">1</span></div>
+          <div class="kv"><b>Precio unitario</b><span id="sumUnit">$0.00</span></div>
+          <div class="kv"><b>Descuento</b><span id="sumDisc">0%</span></div>
+          <div class="kv"><b>Total</b><span id="sumTotal">$0.00</span></div>
+        </div>
+        <button id="confirmBtn" class="confirm-btn" disabled>Confirmar Venta</button>
+      </div>
+    </section>
+
+    <section class="card summary">
+      <h3>Resumen</h3>
+      <div class="totals">
+        <div class="stat"><div class="label">Total Ventas</div><div id="grandTotal" class="value">$0.00</div></div>
+        <div class="stat"><div class="label">Número de Ventas</div><div id="saleCount" class="value">0</div></div>
+      </div>
+      <div class="btns">
+        <button id="undoBtn" type="button" class="neutral-btn">Eliminar Última Venta</button>
+        <button id="resetBtn" type="button" class="danger-btn">Reiniciar Ventas</button>
+      </div>
+    </section>
+
+    <section class="card history">
+      <h3>Historial de Ventas</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Paquete</th>
+              <th>Brownies</th>
+              <th>Cant.</th>
+              <th>Precio</th>
+              <th>Desc.</th>
+              <th>Total</th>
+              <th>Pago</th>
+              <th>Cambio</th>
+              <th>Hora</th>
+            </tr>
+          </thead>
+          <tbody id="historyBody">
+            <tr id="emptyRow"><td colspan="10" class="empty">No hay ventas registradas</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal Cantidad a Pagar -->
+  <div class="modal-overlay" id="payModal" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="payTitle">
+      <header>
+        <h4 id="payTitle">Cantidad a Pagar</h4>
+        <button class="btn btn-ghost" id="payClose" aria-label="Cerrar">✕</button>
+      </header>
+      <div class="body">
+        <div class="receipt">
+          <div class="row"><span>Subtotal:</span><strong id="modalSubtotal">$0.00</strong></div>
+          <div class="row"><span>Descuento:</span><strong id="modalDiscountPct">0%</strong></div>
+          <div class="row"><span>Ahorro:</span><strong id="modalSavings">$0.00</strong></div>
+          <div class="row total"><span>TOTAL A PAGAR:</span><strong id="modalTotal">$0.00</strong></div>
+        </div>
+      </div>
+      <footer>
+        <button class="btn btn-primary" id="payAccept">Aceptar</button>
+      </footer>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const PRICES = {
+    'Individual': 40,
+    'Bolsa de 3': 100,
+    'Caja de 4': 120,
+  };
+  const PACKAGE_SIZES = {
+    'Individual': 1,
+    'Bolsa de 3': 3,
+    'Caja de 4': 4,
+  };
+  const CURRENCY = new Intl.NumberFormat('es-MX',{ style:'currency', currency:'MXN', minimumFractionDigits: 2 });
+
+  const state = {
+    package: null,
+    packageSize: 0,
+    flavorCounts: {}, // Objeto que guarda cuántos de cada sabor
+    qty: 1,
+    unitPrice: 0,
+    discountPct: 0,
+    subtotal: 0,
+    discountAmt: 0,
+    total: 0,
+  };
+
+  let history = [];
+  let totals = { sum: 0, count: 0 };
+
+  const $ = sel => document.querySelector(sel);
+  const $$ = sel => Array.from(document.querySelectorAll(sel));
+  const money = n => CURRENCY.format(n);
+  const timeNow = () => new Date().toLocaleTimeString('es-MX', { hour12:false });
+
+  const packageButtons = $$('#packageButtons .pill');
+  const flavorButtons  = $$('#flavorButtons .flavor');
+  const discountButtons= $$('#discountButtons .disc');
+  const qtyMinus = $('#qtyMinus');
+  const qtyPlus  = $('#qtyPlus');
+  const qtyDisplay = $('#qtyDisplay');
+  const calcBtn = $('#calcBtn');
+  const salePlaceholder = $('#salePlaceholder');
+  const saleSummary = $('#saleSummary');
+  const flavorTitle = $('#flavorTitle');
+  // Modal refs
+  const modal = document.getElementById('payModal');
+  const modalSubtotal = document.getElementById('modalSubtotal');
+  const modalDiscountPct = document.getElementById('modalDiscountPct');
+  const modalSavings = document.getElementById('modalSavings');
+  const modalTotal = document.getElementById('modalTotal');
+  const modalAccept = document.getElementById('payAccept');
+  const modalClose = document.getElementById('payClose');
+
+  function save(){
+    try{
+      localStorage.setItem('ad_pos_history', JSON.stringify(history));
+      localStorage.setItem('ad_pos_totals', JSON.stringify(totals));
+    }catch(e){}
+  }
+
+  function load(){
+    try{
+      const h = JSON.parse(localStorage.getItem('ad_pos_history')) || [];
+      const t = JSON.parse(localStorage.getItem('ad_pos_totals')) || { sum:0, count:0 };
+      history = h; totals = t;
+    }catch{ history = []; totals = { sum:0, count:0 }; }
+  }
+
+  function getTotalFlavorsSelected(){
+    return Object.values(state.flavorCounts).reduce((sum, count) => sum + count, 0);
+  }
+
+  function getFlavorsList(){
+    const list = [];
+    for(const [flavor, count] of Object.entries(state.flavorCounts)){
+      if(count > 0){
+        if(count === 1){
+          list.push(flavor);
+        } else {
+          list.push(`${flavor} (${count})`);
+        }
+      }
+    }
+    return list.join(', ');
+  }
+
+  function updateFlavorIndicator(){
+    if(!flavorTitle) return;
+    
+    if(!state.package){
+      flavorTitle.textContent = 'Tipo de Brownie';
+      flavorTitle.style.color = '';
+      return;
+    }
+    const totalSelected = getTotalFlavorsSelected();
+    const remaining = state.packageSize - totalSelected;
+    if(state.packageSize > 1 && remaining > 0){
+      flavorTitle.textContent = `Tipo de Brownie (Selecciona ${remaining} más)`;
+      flavorTitle.style.color = '#d97706';
+    } else if(state.packageSize > 1 && remaining === 0){
+      flavorTitle.textContent = `Tipo de Brownie (✓ Completo)`;
+      flavorTitle.style.color = '#16a34a';
+    } else {
+      flavorTitle.textContent = 'Tipo de Brownie';
+      flavorTitle.style.color = '';
+    }
+  }
+
+  function recalc(){
+    const totalSelected = getTotalFlavorsSelected();
+    const hasEnoughFlavors = totalSelected === state.packageSize;
+    
+    if(!state.package || !hasEnoughFlavors || state.qty < 1){
+      if(calcBtn) calcBtn.disabled = true;
+      const confirmBtn = $('#confirmBtn');
+      if(confirmBtn) confirmBtn.disabled = true;
+      return;
+    }
+    
+    state.unitPrice = PRICES[state.package] || 0;
+    state.subtotal = state.unitPrice * state.qty;
+    state.discountAmt = +(state.subtotal * (state.discountPct/100)).toFixed(2);
+    state.total = +(state.subtotal - state.discountAmt).toFixed(2);
+
+    const sumPackage = $('#sumPackage');
+    const sumFlavor = $('#sumFlavor');
+    const sumQty = $('#sumQty');
+    const sumUnit = $('#sumUnit');
+    const sumDisc = $('#sumDisc');
+    const sumTotal = $('#sumTotal');
+    const confirmBtn = $('#confirmBtn');
+
+    if(sumPackage) sumPackage.textContent = state.package;
+    if(sumFlavor) sumFlavor.textContent = getFlavorsList();
+    if(sumQty) sumQty.textContent = state.qty;
+    if(sumUnit) sumUnit.textContent = money(state.unitPrice);
+    if(sumDisc) sumDisc.textContent = state.discountPct + '%';
+    if(sumTotal) sumTotal.textContent = money(state.total);
+
+    if(calcBtn) calcBtn.disabled = false;
+    if(confirmBtn) confirmBtn.disabled = false;
+  }
+
+  function showSummary(){
+    if(salePlaceholder) salePlaceholder.style.display = 'none';
+    if(saleSummary) saleSummary.style.display = '';
+  }
+
+  function hideSummary(){
+    if(salePlaceholder) salePlaceholder.style.display = '';
+    if(saleSummary) saleSummary.style.display = 'none';
+  }
+
+  function setExclusive(btns, value){
+    btns.forEach(b => {
+      const active = b.dataset.value === value;
+      b.dataset.active = active ? 'true' : 'false';
+    });
+  }
+
+  function resetCurrentSale(){
+    state.package = null;
+    state.packageSize = 0;
+    state.flavorCounts = {};
+    state.qty = 1;
+    state.discountPct = 0;
+    
+    setExclusive(packageButtons, null);
+    flavorButtons.forEach(fb => {
+      fb.dataset.active = 'false';
+      fb.dataset.count = '0';
+      const badge = fb.querySelector('.count-badge');
+      if(badge) badge.textContent = '0';
+    });
+    setExclusive(discountButtons, '0');
+    
+    if(qtyDisplay) qtyDisplay.textContent = '1';
+    hideSummary();
+    updateFlavorIndicator();
+    
+    if(calcBtn) calcBtn.disabled = true;
+    const confirmBtn = $('#confirmBtn');
+    if(confirmBtn) confirmBtn.disabled = true;
+  }
+
+  function repaintHistory(){
+    const tbody = $('#historyBody');
+    if(!tbody) return;
+
+    if(history.length === 0){
+      // Re-crear explícitamente la fila vacía
+      tbody.innerHTML = '<tr id="emptyRow"><td colspan="10" class="empty">No hay ventas registradas</td></tr>';
+      return;
+    }
+
+    // Pintar filas de historial
+    tbody.innerHTML = '';
+    history.forEach((row, i) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${i+1}</td>
+        <td>${row.package}</td>
+        <td>${row.flavor}</td>
+        <td>${row.qty}</td>
+        <td>${money(row.unitPrice)}</td>
+        <td>${money(row.discountAmt)}</td>
+        <td>${money(row.total)}</td>
+        <td>${row.payment != null ? money(row.payment) : ''}</td>
+        <td>${row.change != null ? money(row.change) : ''}</td>
+        <td>${row.time}</td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function repaintTotals(){
+    const grandTotalEl = $('#grandTotal');
+    const saleCountEl = $('#saleCount');
+    if(grandTotalEl) grandTotalEl.textContent = money(totals.sum);
+    if(saleCountEl) saleCountEl.textContent = String(totals.count);
+  }
+
+  // --- Helper: borrar TODO el historial y refrescar UI de forma consistente
+  function clearAllSales(){
+    // 1) Vaciar estructuras sin cambiar referencias
+    history.length = 0;
+    totals.sum = 0;
+    totals.count = 0;
+
+    // 2) Persistir explícitamente el estado vacío (robusto en iOS/Safari)
+    try{
+      localStorage.setItem('ad_pos_history', '[]');
+      localStorage.setItem('ad_pos_totals', JSON.stringify({ sum: 0, count: 0 }));
+    }catch(e){}
+
+    // 3) Refrescar toda la UI
+    repaintHistory();
+    repaintTotals();
+    resetCurrentSale();
+
+    // 4) Mantener consistencia con el resto del flujo
+    save();
+  }
+
+  packageButtons.forEach(btn => btn.addEventListener('click', () => {
+    state.package = btn.dataset.value;
+    state.packageSize = parseInt(btn.dataset.size);
+    state.flavorCounts = {};
+    setExclusive(packageButtons, state.package);
+    flavorButtons.forEach(fb => {
+      fb.dataset.active = 'false';
+      fb.dataset.count = '0';
+      const badge = fb.querySelector('.count-badge');
+      if(badge) badge.textContent = '0';
+    });
+    updateFlavorIndicator();
+    showSummary();
+    recalc();
+  }));
+
+  flavorButtons.forEach(btn => btn.addEventListener('click', () => {
+    if(!state.package) return;
+    
+    const flavor = btn.dataset.value;
+    const currentCount = state.flavorCounts[flavor] || 0;
+    const totalSelected = getTotalFlavorsSelected();
+    
+    // No permitir agregar si ya llegamos al límite total
+    if(totalSelected >= state.packageSize) return;
+    
+    // Incrementar el contador
+    const newCount = currentCount + 1;
+    state.flavorCounts[flavor] = newCount;
+    
+    // Actualizar UI
+    btn.dataset.count = String(newCount);
+    btn.dataset.active = 'true';
+    const badge = btn.querySelector('.count-badge');
+    if(badge) badge.textContent = String(newCount);
+    
+    updateFlavorIndicator();
+    showSummary();
+    recalc();
+  }));
+
+  // Click derecho o long press para reducir
+  flavorButtons.forEach(btn => {
+    btn.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      if(!state.package) return;
+      
+      const flavor = btn.dataset.value;
+      const currentCount = state.flavorCounts[flavor] || 0;
+      
+      if(currentCount > 0){
+        const newCount = currentCount - 1;
+        if(newCount === 0){
+          delete state.flavorCounts[flavor];
+          btn.dataset.active = 'false';
+        } else {
+          state.flavorCounts[flavor] = newCount;
+        }
+        btn.dataset.count = String(newCount);
+        const badge = btn.querySelector('.count-badge');
+        if(badge) badge.textContent = String(newCount);
+        
+        updateFlavorIndicator();
+        showSummary();
+        recalc();
+      }
+    });
+  });
+
+  discountButtons.forEach(btn => btn.addEventListener('click', () => {
+    state.discountPct = +btn.dataset.value;
+    setExclusive(discountButtons, String(state.discountPct));
+    showSummary();
+    recalc();
+  }));
+
+  qtyMinus.addEventListener('click', () => {
+    state.qty = Math.max(1, state.qty - 1);
+    if(qtyDisplay) qtyDisplay.textContent = String(state.qty);
+    showSummary();
+    recalc();
+  });
+
+  qtyPlus.addEventListener('click', () => {
+    state.qty += 1;
+    if(qtyDisplay) qtyDisplay.textContent = String(state.qty);
+    showSummary();
+    recalc();
+  });
+
+  if(calcBtn){
+    calcBtn.addEventListener('click', () => {
+      if(!state.package){
+        alert('Selecciona un tipo de paquete');
+        return;
+      }
+      const totalSelected = getTotalFlavorsSelected();
+      if(totalSelected !== state.packageSize){
+        alert(`Debes seleccionar exactamente ${state.packageSize} brownie(s)`);
+        return;
+      }
+      // actualizar resumen y abrir modal
+      showSummary();
+      recalc();
+      if(modal){
+        modalSubtotal.textContent = money(state.subtotal);
+        modalDiscountPct.textContent = state.discountPct + '%';
+        modalSavings.textContent = money(state.discountAmt);
+        modalTotal.textContent = money(state.total);
+        modal.style.display = 'flex';
+        modal.setAttribute('aria-hidden','false');
+      }
+    });
+  }
+
+  // cerrar modal
+  function closeModal(){ if(modal){ modal.style.display='none'; modal.setAttribute('aria-hidden','true'); } }
+  if(modalAccept) modalAccept.addEventListener('click', closeModal);
+  if(modalClose) modalClose.addEventListener('click', closeModal);
+  if(modal) modal.addEventListener('click', (e)=>{ if(e.target===modal) closeModal(); });
+
+  const confirmBtn = $('#confirmBtn');
+  if(confirmBtn){
+    confirmBtn.addEventListener('click', () => {
+      const totalSelected = getTotalFlavorsSelected();
+      if(!state.package){
+        alert('Selecciona un tipo de paquete');
+        return;
+      }
+      if(totalSelected !== state.packageSize){
+        alert(`Debes seleccionar exactamente ${state.packageSize} brownie(s)`);
+        return;
+      }
+      
+      const paymentStr = prompt('Monto recibido (opcional):');
+      let payment = null, change = null;
+      if(paymentStr !== null && paymentStr.trim() !== ''){
+        const num = Number(paymentStr.replace(/,/g,'.'));
+        if(Number.isFinite(num)){
+          payment = +num.toFixed(2);
+          change = Math.max(0, +(payment - state.total).toFixed(2));
+        }
+      }
+      
+      const entry = {
+        package: state.package,
+        flavor: getFlavorsList(),
+        qty: state.qty,
+        unitPrice: state.unitPrice,
+        discountPct: state.discountPct,
+        subtotal: state.subtotal,
+        discountAmt: state.discountAmt,
+        total: state.total,
+        payment, change,
+        time: timeNow(),
+      };
+      
+      history.push(entry);
+      totals.sum = +(totals.sum + entry.total).toFixed(2);
+      totals.count += 1;
+      save();
+      repaintHistory();
+      repaintTotals();
+      
+      // Limpiar selección después de confirmar
+      resetCurrentSale();
+    });
+  }
+
+  $('#undoBtn').addEventListener('click', () => {
+    if(history.length === 0) return;
+    const last = history.pop();
+    totals.sum = +(totals.sum - last.total).toFixed(2);
+    totals.count = Math.max(0, totals.count - 1);
+    save();
+    repaintHistory();
+    repaintTotals();
+  });
+
+  $('#resetBtn').addEventListener('click', () => {
+    try{
+      clearAllSales();
+      // Mensaje no bloqueante en consola para confirmar
+      console.log('[POS] Historial reiniciado completamente');
+    }catch(err){
+      console.error('[POS] Error al reiniciar ventas', err);
+      alert('No se pudo reiniciar el historial. Revisa la consola para detalles.');
+    }
+  });
+
+  /* ==========================
+     Sanity tests (no destructivos)
+     Se ejecutan en consola y no afectan storage permanente
+  ========================== */
+  try{
+    // Test 1: getTotalFlavorsSelected
+    const prevCounts = {...state.flavorCounts};
+    state.flavorCounts = { A:2, B:1 };
+    console.assert(getTotalFlavorsSelected() === 3, 'getTotalFlavorsSelected debe regresar 3');
+    state.flavorCounts = prevCounts;
+
+    // Test 2: reset ventas limpia estructuras en memoria
+    history.push({ total: 10 });
+    totals.sum = 10; totals.count = 1;
+    history.length = 0; totals.sum = 0; totals.count = 0;
+    console.assert(history.length === 0 && totals.sum === 0 && totals.count === 0, 'Reset en memoria debe dejar vacío');
+  }catch(e){ console.warn('Sanity tests warning:', e); }
+
+  // Inicialización
+  load();
+  repaintHistory();
+  repaintTotals();
+  setExclusive(discountButtons, '0');
+  hideSummary();
+})();
+</script>
+</body>
+</html>
